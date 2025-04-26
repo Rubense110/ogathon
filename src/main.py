@@ -2,6 +2,8 @@
 
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import List
 
 app = FastAPI(
     title="Virus Propagation Challenge",
@@ -32,8 +34,8 @@ def solution_1(n: int = Query(..., description="Distancia a alcanzar")):
     if n < 0:
         return JSONResponse(status_code=400, content={"error": "La distancia debe ser un número positivo o cero."})
 
-    resultado = contar_formas(n)
-    return {"distancia": n, "patrones": resultado}
+    resultado = str(contar_formas(n))
+    return resultado
 
 ### RETO 2
 
@@ -67,4 +69,54 @@ def solution_1(n: int = Query(..., description="Número máximo a considerar")):
 
     # Llamamos a la función para calcular cuántos números hasta 'n' generan secuencias que terminan en 89
     resultado = contar_numeros_hasta(n)
-    return {"n": n, "result": resultado}
+    return str(resultado)
+
+
+### RETO 3
+
+# Modelo para recibir el cuerpo de la solicitud
+class Residuos(BaseModel):
+    residuos: List[List[int]]  # Lista de listas que representa los contenedores y residuos
+
+# Función para calcular los movimientos necesarios
+def min_movimientos(contenedores):
+    # Las 6 permutaciones posibles de [0, 1, 2]
+    permutaciones = [
+        [0, 1, 2],
+        [0, 2, 1],
+        [1, 0, 2],
+        [1, 2, 0],
+        [2, 0, 1],
+        [2, 1, 0]
+    ]
+    
+    min_movs = float('inf')
+
+    for asignacion in permutaciones:
+        movimientos = 0
+        for idx_contenedor in range(3):
+            tipo_asignado = asignacion[idx_contenedor]
+            for tipo in range(3):
+                if tipo != tipo_asignado:
+                    movimientos += contenedores[idx_contenedor][tipo]
+        if movimientos < min_movs:
+            min_movs = movimientos
+
+    return min_movs
+
+# Endpoint POST para calcular los movimientos
+@app.post("/challenges/solution-3", summary="Calcula el número mínimo de movimientos de residuos")
+def solution_3(residuos: List[List[int]]):
+    # Llamamos a la función para calcular el número mínimo de movimientos
+    movimientos = min_movimientos(residuos)
+    return movimientos
+
+
+
+"""
+[
+  [1, 3, 2],
+  [2, 1, 3],
+  [3, 2, 1]
+]
+"""
